@@ -34,4 +34,3 @@ func InitDB() *gorm.DB {
 	log.Println("Database connected and migrated successfully")
 	return db
 }
-
