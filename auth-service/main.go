@@ -7,6 +7,7 @@ import (
 	"auth-service/repository"
 	"auth-service/routes"
 	"auth-service/service"
+	"auth-service/validator"
 
 	"fmt"
 
@@ -26,6 +27,7 @@ func main() {
 	db.AutoMigrate(&models.User{})
 
 	e := echo.New()
+	e.Validator = validator.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "🚀 Server running and DB connected!")
 	})

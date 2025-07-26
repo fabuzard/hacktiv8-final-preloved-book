@@ -5,7 +5,6 @@ import (
 	"auth-service/helpers"
 	"auth-service/models"
 	"auth-service/service"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -26,44 +25,74 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 func (h *AuthHandler) Register(c echo.Context) error {
 	var user dto.RegisterRequest
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request"})
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid request",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
+	// Validate the input
+	if err := c.Validate(user); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Validation failed: " + err.Error(),
+			Code:    http.StatusBadRequest,
+		})
 	}
 
 	createdUser, err := h.Service.CreateUser(user)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: "Failed to create user: " + err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
 	}
 
-	return c.JSON(http.StatusCreated, createdUser)
+	return c.JSON(http.StatusCreated, dto.RegisterResponse{
+		Message: "User registered successfully",
+		User:    createdUser,
+	})
 }
 func (h *AuthHandler) Login(c echo.Context) error {
 	var input dto.LoginRequest
 
 	// Parse JSON input
 	if err := c.Bind(&input); err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request"})
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid request",
+			Code:    http.StatusBadRequest,
+		})
 	}
 
 	user, err := h.Service.GetUserByEmail(input.Email)
 	if err != nil {
 
 		if err.Error() == "email not found" {
-			return c.JSON(http.StatusBadRequest, echo.Map{"error": "Email not registered"})
+			return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+				Message: "Email not found",
+				Code:    http.StatusBadRequest,
+			})
 		}
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Server error"})
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: "Failed to retrieve user: " + err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
 	}
 
 	// Compare hashed password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-
-		fmt.Println("stored hash: ", user.Password)
-		fmt.Println("input password: ", input.Password)
-		return c.JSON(http.StatusUnauthorized, echo.Map{"error": "Invalid email or password"})
+		// If password does not match, return unauthorized
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Message: "Invalid email or password",
+			Code:    http.StatusUnauthorized,
+		})
 	}
 	// Generate JWT token
 	token, err := helpers.GenerateJWT(user.ID, user.Role)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to generate token"})
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: "Failed to generate token: " + err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
 	}
 
 	return c.JSON(http.StatusOK, dto.LoginResponse{
@@ -76,32 +105,50 @@ func (h *AuthHandler) GetUserByID(c echo.Context) error {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid user ID"})
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
+		})
 	}
 
 	user, err := h.Service.GetUserByID(uint(id))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, echo.Map{"error": "User not found"})
+		return c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
+		})
 	}
-	return c.JSON(http.StatusOK, user)
+	return c.JSON(http.StatusOK, dto.GetUserByIDResponse{
+		Message: "User retrieved successfully",
+		User:    user,
+	})
 }
 
 func (h *AuthHandler) UpdateUser(c echo.Context) error {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid user ID"})
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
+		})
 	}
 
 	var user models.User
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request"})
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid request",
+			Code:    http.StatusBadRequest,
+		})
 	}
 
 	user.ID = uint(id)
 	updatedUser, err := h.Service.UpdateUser(user)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
 	}
 	return c.JSON(http.StatusOK, updatedUser)
 }
