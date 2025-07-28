@@ -152,3 +152,53 @@ func (h *AuthHandler) UpdateUser(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, updatedUser)
 }
+
+func (h *AuthHandler) UpdateBalance(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
+	// Bind the request body to UpdateBalanceRequest
+	var balanceRequest dto.UpdateBalanceRequest
+	if err := c.Bind(&balanceRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid request",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
+	user, err := h.Service.GetUserByID(uint(id))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
+		})
+	}
+
+	if balanceRequest.Amount <= 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Amount must be greater than zero",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
+	user.Balance += balanceRequest.Amount
+	updatedUser, err := h.Service.UpdateUser(user)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: "Failed to update user balance: " + err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
+	}
+	return c.JSON(http.StatusOK, dto.UpdateBalanceResponse{
+		Message: "User balance updated successfully",
+		ID:      updatedUser.ID,
+		Balance: updatedUser.Balance,
+	})
+
+}

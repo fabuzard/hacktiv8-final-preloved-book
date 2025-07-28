@@ -17,3 +17,7 @@ type UpdateUserRequest struct {
 	Address  string `json:"address" validate:"required"`
 	Role     string `json:"role" validate:"required,oneof=buyer seller"`
 }
+
+type UpdateBalanceRequest struct {
+	Amount float64 `json:"Amount" validate:"required"`
+}

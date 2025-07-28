@@ -16,3 +16,9 @@ type GetUserByIDResponse struct {
 	Message string      `json:"message"`
 	User    models.User `json:"user"`
 }
+
+type UpdateBalanceResponse struct {
+	Message string  `json:"message"`
+	ID      uint    `json:"id"`
+	Balance float64 `json:"balance"`
+}
