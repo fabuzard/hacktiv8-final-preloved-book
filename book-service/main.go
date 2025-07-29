@@ -3,6 +3,7 @@ package main
 import (
 	"book-service/config"
 	"book-service/handler"
+	jwtMiddleware "book-service/middleware"
 	"book-service/repository"
 	"book-service/service"
 	"log"
@@ -26,6 +27,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
+	e.Use(jwtMiddleware.JwtMiddleware())
 
 	db := config.InitDB()
 
@@ -33,11 +35,7 @@ func main() {
 	bookService := service.NewBookService(bookRepo)
 	bookHandler := handler.NewBookHandler(bookService)
 
-	api := e.Group("/api/v1")
-
-	api.Use(jwtMiddleware())
-
-	books := api.Group("/books")
+	books := e.Group("/books")
 	books.POST("", bookHandler.CreateBook)
 	books.GET("", bookHandler.GetAllBooks)
 	books.GET("/my", bookHandler.GetMyBooks)
@@ -52,13 +50,3 @@ func main() {
 	log.Printf("Server starting on port %s", port)
 	log.Fatal(e.Start(":" + port))
 }
-
-func jwtMiddleware() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			c.Set("user_id", "1")
-			return next(c)
-		}
-	}
-}
-

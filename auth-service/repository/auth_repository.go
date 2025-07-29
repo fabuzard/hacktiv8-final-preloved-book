@@ -8,7 +8,6 @@ import (
 )
 
 type AuthRepository interface {
-	GetAllUsers() ([]models.User, error)
 	GetUserByID(id uint) (models.User, error)
 	GetUserByEmail(email string) (models.User, error)
 	CreateUser(user models.User) (models.User, error)
@@ -35,14 +34,6 @@ func (r *authRepository) GetUserByEmail(email string) (models.User, error) {
 		return models.User{}, err
 	}
 	return user, nil
-}
-
-func (r *authRepository) GetAllUsers() ([]models.User, error) {
-	var users []models.User
-	if err := r.db.Find(&users).Error; err != nil {
-		return nil, err
-	}
-	return users, nil
 }
 
 func (r *authRepository) GetUserByID(id uint) (models.User, error) {

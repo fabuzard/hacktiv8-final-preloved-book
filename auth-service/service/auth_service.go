@@ -9,7 +9,6 @@ import (
 )
 
 type AuthService interface {
-	GetAllUsers() ([]models.User, error)
 	GetUserByID(id uint) (models.User, error)
 	CreateUser(user dto.RegisterRequest) (models.User, error)
 	UpdateUser(user models.User) (models.User, error)
@@ -32,14 +31,6 @@ func (s *authService) GetUserByEmail(email string) (models.User, error) {
 		return models.User{}, err
 	}
 	return user, nil
-}
-
-func (s *authService) GetAllUsers() ([]models.User, error) {
-	users, err := s.repo.GetAllUsers()
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
 }
 
 func (s *authService) GetUserByID(id uint) (models.User, error) {
