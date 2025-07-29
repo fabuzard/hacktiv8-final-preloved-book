@@ -5,6 +5,7 @@ import (
 	"auth-service/helpers"
 	"auth-service/models"
 	"auth-service/service"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -47,11 +48,74 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		})
 	}
 
+	// Generate email verification token
+	emailToken, err := helpers.GenerateEmailToken(createdUser.Email)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: "Failed to generate email verification token: " + err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
+	}
+
+	go func() {
+		err := helpers.SendVerificationEmail(user.Email, emailToken)
+		if err != nil {
+			log.Println("failed to send verification email:", err)
+		}
+	}()
+
 	return c.JSON(http.StatusCreated, dto.RegisterResponse{
-		Message: "User registered successfully",
+		Message: "User registered successfully, Please check your email for verification",
 		User:    createdUser,
 	})
 }
+
+func (h *AuthHandler) ResendVerificationEmail(c echo.Context) error {
+	var req dto.ResendVerificationEmailRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid request",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
+	user, err := h.Service.GetUserByEmail(req.Email)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
+		})
+	}
+
+	if user.IsVerified {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "User is already verified",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
+	emailToken, err := helpers.GenerateEmailToken(user.Email)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: "Failed to generate email verification token: " + err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
+	}
+
+	go func() {
+		err := helpers.SendVerificationEmail(user.Email, emailToken)
+		if err != nil {
+			log.Println("failed to send verification email:", err)
+		}
+	}()
+
+	return c.JSON(http.StatusOK, dto.VerificationResponse{
+		Message: "Verification email sent successfully",
+		Email:   req.Email,
+	})
+
+}
+
 func (h *AuthHandler) Login(c echo.Context) error {
 	var input dto.LoginRequest
 
@@ -75,6 +139,13 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Message: "Failed to retrieve user: " + err.Error(),
 			Code:    http.StatusInternalServerError,
+		})
+	}
+
+	if !user.IsVerified {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Message: "User is not verified, please check your email or send another request for verification",
+			Code:    http.StatusUnauthorized,
 		})
 	}
 
@@ -201,4 +272,35 @@ func (h *AuthHandler) UpdateBalance(c echo.Context) error {
 		Balance: updatedUser.Balance,
 	})
 
+}
+
+func (h *AuthHandler) VerifyUser(c echo.Context) error {
+	tokenString := c.QueryParam("token")
+	if tokenString == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Token is required",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
+	email, err := helpers.ParseAndValidateEmailToken(tokenString)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Message: "Token verification failed: " + err.Error(),
+			Code:    http.StatusUnauthorized,
+		})
+	}
+
+	user, err := h.Service.VerifyUser(email)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Message: "Failed to verify user: " + err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.RegisterResponse{
+		Message: "User verified successfully",
+		User:    user,
+	})
 }

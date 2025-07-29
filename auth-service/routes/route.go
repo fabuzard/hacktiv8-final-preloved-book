@@ -12,4 +12,6 @@ func SetupRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	e.GET("/users/:id", h.GetUserByID)
 	e.PUT("/users/:id", h.UpdateUser)
 	e.PATCH("/users/:id", h.UpdateBalance)
+	e.POST("/users/verify", h.VerifyUser)
+	e.POST("/users/resend-verification-email", h.ResendVerificationEmail)
 }
