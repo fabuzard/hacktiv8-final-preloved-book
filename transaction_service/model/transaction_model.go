@@ -2,7 +2,6 @@ package model
 
 type Transaction struct {
 	Transaction_ID    uint    `gorm:"primaryKey" json:"transaction_id"`
-	Name              string  `gorm:"not null" json:"name"`
 	Amount            float64 `gorm:"not null" json:"amount"`
 	CreatedAt         string  `gorm:"not null" json:"created_at"`
 	DeletedAt         string  `gorm:"not null" json:"deleted_at"`
