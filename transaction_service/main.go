@@ -3,6 +3,7 @@ package main
 import (
 	"main/config"
 	"main/handler"
+	"main/job"
 	"main/middleware"
 	"main/model"
 	"main/repository"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/robfig/cron/v3"
 )
 
 func main() {
@@ -18,6 +20,14 @@ func main() {
 	godotenv.Load()
 	// Run migrations
 	db.AutoMigrate(&model.Transaction{})
+
+	c := cron.New()
+
+	c.AddFunc("0 0 * * *", func() {
+		job.UpdateStatus(db)
+	})
+
+	c.Start()
 
 	transRepo := repository.NewTransactionRepository(db)
 	transService := service.NewTransactionService(transRepo)
