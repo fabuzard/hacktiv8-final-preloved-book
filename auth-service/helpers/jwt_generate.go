@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
-var jwtSecret = os.Getenv("JWT_SECRET")
-
 func GenerateJWT(user models.User) (string, error) {
+	godotenv.Load()
+	var jwtSecret = os.Getenv("JWT_SECRET")
 	claims := jwt.MapClaims{
 		"user_id":   user.ID,
 		"role":      user.Role,
