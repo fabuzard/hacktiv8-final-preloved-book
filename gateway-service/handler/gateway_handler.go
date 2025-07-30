@@ -28,7 +28,6 @@ func (h *GatewayHandler) Register(c echo.Context) error {
 	return proxyRequest(c, h.AuthServiceURL+"/register")
 }
 func (h *GatewayHandler) Login(c echo.Context) error {
-	fmt.Println("📩 Gateway: Login called")
 	return proxyRequest(c, h.AuthServiceURL+"/login")
 }
 func (h *GatewayHandler) GetUserByID(c echo.Context) error {
@@ -55,7 +54,6 @@ func (h *GatewayHandler) GetBookByID(c echo.Context) error {
 	return proxyRequest(c, h.BookServiceURL+"/books/"+c.Param("id"))
 }
 func (h *GatewayHandler) CreateBook(c echo.Context) error {
-	fmt.Println("📩 Gateway: CreateBook called")
 	return proxyRequest(c, h.BookServiceURL+"/books")
 }
 

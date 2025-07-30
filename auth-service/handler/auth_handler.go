@@ -158,7 +158,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		})
 	}
 	// Generate JWT token
-	token, err := helpers.GenerateJWT(user.ID, user.Role)
+	token, err := helpers.GenerateJWT(user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Message: "Failed to generate token: " + err.Error(),
