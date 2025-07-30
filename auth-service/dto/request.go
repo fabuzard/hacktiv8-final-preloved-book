@@ -21,3 +21,7 @@ type UpdateUserRequest struct {
 type UpdateBalanceRequest struct {
 	Amount float64 `json:"Amount" validate:"required"`
 }
+
+type ResendVerificationEmailRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}

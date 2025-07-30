@@ -8,11 +8,12 @@ import (
 )
 
 type AuthRepository interface {
-	GetAllUsers() ([]models.User, error)
 	GetUserByID(id uint) (models.User, error)
 	GetUserByEmail(email string) (models.User, error)
 	CreateUser(user models.User) (models.User, error)
 	UpdateUser(user models.User) (models.User, error)
+	DeleteUser(id uint) error
+	VerifyUser(email string) (models.User, error)
 }
 
 type authRepository struct {
@@ -35,14 +36,6 @@ func (r *authRepository) GetUserByEmail(email string) (models.User, error) {
 	return user, nil
 }
 
-func (r *authRepository) GetAllUsers() ([]models.User, error) {
-	var users []models.User
-	if err := r.db.Find(&users).Error; err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
 func (r *authRepository) GetUserByID(id uint) (models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, id).Error; err != nil {
@@ -62,5 +55,29 @@ func (r *authRepository) UpdateUser(user models.User) (models.User, error) {
 	if err := r.db.Save(&user).Error; err != nil {
 		return models.User{}, err
 	}
+	return user, nil
+}
+
+func (r *authRepository) DeleteUser(id uint) error {
+	if err := r.db.Delete(&models.User{}, id).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *authRepository) VerifyUser(email string) (models.User, error) {
+	var user models.User
+	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return models.User{}, fmt.Errorf("email not found")
+		}
+		return models.User{}, err
+	}
+
+	user.IsVerified = true
+	if err := r.db.Save(&user).Error; err != nil {
+		return models.User{}, err
+	}
+
 	return user, nil
 }

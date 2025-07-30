@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  gateway-service:
+    build:
+      context: ./gateway-service
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - book-service
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8080
+      - BOOK_SERVICE_URL=http://book-service:8081
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8080"
+    depends_on:
+      - email-service
+    environment:
+      - EMAIL_SERVICE_URL=http://email-service:8084
+
+  book-service:
+    build:
+      context: ./book-service
+    container_name: book-service
+    ports:
+      - "8082:8081"
+
+  email-service:
+    build:
+      context: ./email-service
+    container_name: email-service
+    ports:
+      - "8084:8084"

@@ -22,3 +22,8 @@ type UpdateBalanceResponse struct {
 	ID      uint    `json:"id"`
 	Balance float64 `json:"balance"`
 }
+
+type VerificationResponse struct {
+	Message string `json:"message"`
+	Email   string `json:"email"`
+}

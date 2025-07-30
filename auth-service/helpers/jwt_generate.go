@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"auth-service/models"
 	"os"
 	"time"
 
@@ -9,12 +10,14 @@ import (
 
 var jwtSecret = os.Getenv("JWT_SECRET")
 
-func GenerateJWT(userID uint, role string) (string, error) {
+func GenerateJWT(user models.User) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
-		"role":    role,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-		"iat":     time.Now().Unix(),
+		"user_id":   user.ID,
+		"role":      user.Role,
+		"email":     user.Email,
+		"full_name": user.Fullname,
+		"exp":       time.Now().Add(time.Hour * 24).Unix(),
+		"iat":       time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
