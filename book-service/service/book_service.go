@@ -4,6 +4,7 @@ import (
 	"book-service/model"
 	"book-service/repository"
 	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,7 @@ type BookService interface {
 	GetBooksBySellerID(sellerID uint) ([]model.BookResponse, error)
 	UpdateBook(id uint, req *model.UpdateBookRequest, sellerID uint) (*model.BookResponse, error)
 	DeleteBook(id uint, sellerID uint) error
+	DeductStock(id uint, amount int) (*model.BookResponse, error)
 }
 
 type bookService struct {
@@ -142,4 +144,35 @@ func (s *bookService) DeleteBook(id uint, sellerID uint) error {
 	}
 
 	return s.bookRepo.Delete(id, sellerID)
+}
+
+func (s *bookService) DeductStock(id uint, amount int) (*model.BookResponse, error) {
+	if amount <= 0 {
+		return nil, errors.New("deduction amount must be greater than 0")
+	}
+
+	book, err := s.bookRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("book not found")
+		}
+		return nil, err
+	}
+
+	if book.Stock < amount {
+		return nil, errors.New("insufficient stock")
+	}
+
+	err = s.bookRepo.DeductStock(id, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedBook, err := s.bookRepo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	response := updatedBook.ToResponse()
+	return &response, nil
 }

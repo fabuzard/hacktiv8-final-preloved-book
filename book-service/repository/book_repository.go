@@ -2,6 +2,7 @@ package repository
 
 import (
 	"book-service/model"
+
 	"gorm.io/gorm"
 )
 
@@ -12,6 +13,7 @@ type BookRepository interface {
 	GetBySellerID(sellerID uint) ([]model.Book, error)
 	Update(book *model.Book) error
 	Delete(id uint, sellerID uint) error
+	DeductStock(id uint, amount int) error
 }
 
 type bookRepository struct {
@@ -29,11 +31,11 @@ func (r *bookRepository) Create(book *model.Book) error {
 func (r *bookRepository) GetAll(category string) ([]model.Book, error) {
 	var books []model.Book
 	query := r.db.Model(&model.Book{})
-	
+
 	if category != "" {
 		query = query.Where("category ILIKE ?", "%"+category+"%")
 	}
-	
+
 	err := query.Find(&books).Error
 	return books, err
 }
@@ -59,4 +61,8 @@ func (r *bookRepository) Update(book *model.Book) error {
 
 func (r *bookRepository) Delete(id uint, sellerID uint) error {
 	return r.db.Where("id = ? AND seller_id = ?", id, sellerID).Delete(&model.Book{}).Error
+}
+
+func (r *bookRepository) DeductStock(id uint, amount int) error {
+	return r.db.Model(&model.Book{}).Where("id = ? AND stock >= ?", id, amount).Update("stock", gorm.Expr("stock - ?", amount)).Error
 }

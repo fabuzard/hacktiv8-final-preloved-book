@@ -40,6 +40,7 @@ func main() {
 	transGroup.POST("", transHandler.CreateTransaction)
 	transGroup.GET("", transHandler.GetTransaction)
 	transGroup.PUT("/:trans_id", transHandler.UpdateTransactionStatus)
+	transGroup.POST("/webhook", transHandler.HandleWebhook)
 
 	port := os.Getenv("PORT")
 	if port == "" {

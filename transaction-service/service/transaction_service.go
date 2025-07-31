@@ -9,6 +9,7 @@ type TransactionService interface {
 	CreateTransaction(user_id int, t model.Transaction) (model.Transaction, error)
 	GetTransaction(user_id int) ([]model.Transaction, error)
 	UpdateTransactionStatus(transaction_id int) (model.Transaction, error)
+	GetTransactionByID(transaction_id int) (model.Transaction, error)
 }
 
 type transactionService struct {
@@ -37,6 +38,14 @@ func (s *transactionService) GetTransaction(user_id int) ([]model.Transaction, e
 
 func (s *transactionService) UpdateTransactionStatus(transaction_id int) (model.Transaction, error) {
 	trans, err := s.repo.UpdateTransactionStatus(transaction_id)
+	if err != nil {
+		return model.Transaction{}, err
+	}
+	return trans, nil
+}
+
+func (s *transactionService) GetTransactionByID(transaction_id int) (model.Transaction, error) {
+	trans, err := s.repo.GetTransactionByID(transaction_id)
 	if err != nil {
 		return model.Transaction{}, err
 	}

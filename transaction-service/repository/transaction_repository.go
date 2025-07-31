@@ -12,6 +12,7 @@ type TransactionRepository interface {
 	CreateTransaction(user_id int, t model.Transaction) (model.Transaction, error)
 	GetTransaction(user_id int) ([]model.Transaction, error)
 	UpdateTransactionStatus(transaction_id int) (model.Transaction, error)
+	GetTransactionByID(transaction_id int) (model.Transaction, error)
 }
 
 type transactionRepository struct {
@@ -55,5 +56,13 @@ func (r *transactionRepository) UpdateTransactionStatus(transaction_id int) (mod
 		return model.Transaction{}, utils.ErrUserNotFound
 	}
 
+	return t, nil
+}
+
+func (r *transactionRepository) GetTransactionByID(transaction_id int) (model.Transaction, error) {
+	var t model.Transaction
+	if err := r.db.First(&t, transaction_id).Error; err != nil {
+		return model.Transaction{}, utils.ErrUserNotFound
+	}
 	return t, nil
 }

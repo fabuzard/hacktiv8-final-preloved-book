@@ -9,6 +9,7 @@ import (
 	"main/utils"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -112,4 +113,61 @@ func (h *TransactionHandler) UpdateTransactionStatus(c echo.Context) error {
 
 	resp := helper.RespHelper("Transaction status updated successfully", trans)
 	return c.JSON(http.StatusOK, resp)
+}
+func (h *TransactionHandler) HandleWebhook(c echo.Context) error {
+	// Bind request body to get transaction ID
+	var req dto.WebhookRequest
+	if err := c.Bind(&req); err != nil {
+		return utils.ErrBadReq
+	}
+
+	// Get transaction by ID using service
+	transactions, err := h.serv.GetTransactionByID(int(req.TransactionID))
+	if err != nil {
+		return utils.ErrBadReq
+	}
+
+	if transactions.Status == "success" {
+		return utils.ErrBadReq
+	}
+
+	// get book data using book ID
+	book, err := utils.GetBookByID(uint(transactions.Book_ID), c.Request().Header.Get("Authorization"))
+	if err != nil || book.ID == 0 {
+		return utils.ErrBadReq
+	}
+
+	// change status to success
+	updatedTransaction, err := h.serv.UpdateTransactionStatus(int(req.TransactionID))
+	if err != nil {
+		return utils.ErrBadReq
+	}
+
+	// Update stock in book-service
+	rawToken := c.Request().Header.Get("Authorization") // "Bearer ey..."
+	token := strings.TrimPrefix(rawToken, "Bearer ")    // ✅ only the JWT
+	if err := utils.UpdateStock(transactions, req.Qty, token); err != nil {
+		return utils.ErrBadReq
+	}
+
+	// Update seller balance
+
+	if err := utils.UpdateBalance(int(book.SellerID), transactions.Amount); err != nil {
+		return utils.ErrBadReq
+	}
+
+	if err := utils.EmailTransaction(updatedTransaction); err != nil {
+		return utils.ErrBadReq
+	}
+
+	// Return the transaction data for now
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "Transaction completed successfully",
+		"status":  true,
+		"data": map[string]interface{}{
+			"transaction": updatedTransaction,
+			"book":        book,
+			"email_sent":  true,
+		},
+	})
 }
