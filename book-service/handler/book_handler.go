@@ -33,6 +33,14 @@ func (h *BookHandler) CreateBook(c echo.Context) error {
 		})
 	}
 
+	// Extract role from JWT claims
+	role, ok := c.Get("role").(string)
+	if !ok || role != "seller" {
+		return c.JSON(http.StatusForbidden, map[string]string{
+			"error": "Only sellers can create books",
+		})
+	}
+
 	sellerIDStr := c.Get("user_id").(string)
 	sellerID, err := strconv.ParseUint(sellerIDStr, 10, 32)
 	if err != nil {
