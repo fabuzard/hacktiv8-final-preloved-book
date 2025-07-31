@@ -10,9 +10,13 @@ services:
     depends_on:
       - auth-service
       - book-service
+      - transaction-service
     environment:
       - AUTH_SERVICE_URL=http://auth-service:8080
       - BOOK_SERVICE_URL=http://book-service:8081
+      - TRANSACTION_SERVICE_URL=http://transaction-service:8083
+    env_file:
+      - ./gateway-service/.env
 
   auth-service:
     build:
@@ -24,6 +28,8 @@ services:
       - email-service
     environment:
       - EMAIL_SERVICE_URL=http://email-service:8084
+    env_file:
+      - ./auth-service/.env
 
   book-service:
     build:
@@ -31,6 +37,8 @@ services:
     container_name: book-service
     ports:
       - "8082:8081"
+    env_file:
+      - ./book-service/.env
 
   email-service:
     build:
@@ -38,3 +46,14 @@ services:
     container_name: email-service
     ports:
       - "8084:8084"
+    env_file:
+      - ./email-service/.env
+
+  transaction-service:
+    build:
+      context: ./transaction-service
+    container_name: transaction-service
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./transaction-service/.env

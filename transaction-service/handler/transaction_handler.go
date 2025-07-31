@@ -30,9 +30,11 @@ func (h *TransactionHandler) CreateTransaction(c echo.Context) error {
 		return utils.ErrBadReq
 	}
 	trans, err := h.serv.CreateTransaction(user_id, t)
+	if err != nil {
+		return err
+	}
 
-	strId := strconv.Itoa(int(t.Transaction_ID))
-
+	strId := strconv.Itoa(int(trans.Transaction_ID))
 	tokenUrl := utils.MidtransPayment(strId, int(trans.Amount), name, email)
 
 	if err != nil {
@@ -52,7 +54,7 @@ func (h *TransactionHandler) CreateTransaction(c echo.Context) error {
 }
 
 func (h *TransactionHandler) GetTransaction(c echo.Context) error {
-	user_id := c.Get("id").(int)
+	user_id := c.Get("user_id").(int)
 	transactions, err := h.serv.GetTransaction(user_id)
 	if err != nil {
 		return err

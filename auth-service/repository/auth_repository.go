@@ -13,7 +13,6 @@ type AuthRepository interface {
 	CreateUser(user models.User) (models.User, error)
 	UpdateUser(user models.User) (models.User, error)
 	DeleteInactiveUsersOver30Days() error
-
 	VerifyUser(email string) (models.User, error)
 }
 

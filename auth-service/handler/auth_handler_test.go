@@ -28,9 +28,8 @@ func (m *MockAuthService) GetUserByID(id uint) (models.User, error) {
 	}, nil
 }
 
-// Other methods are not used in this test so we just make them panic
 func (m *MockAuthService) CreateUser(dto.RegisterRequest) (models.User, error) {
-	panic("not implemented")
+	return models.User{}, nil
 }
 func (m *MockAuthService) UpdateUser(user models.User) (models.User, error) {
 	if user.ID == 99 {
