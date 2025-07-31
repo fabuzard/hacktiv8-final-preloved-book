@@ -101,6 +101,14 @@ func (h *TransactionHandler) GetTransaction(c echo.Context) error {
 
 func (h *TransactionHandler) UpdateTransactionStatus(c echo.Context) error {
 	transaction_id := c.Param("trans_id")
+
+	var qty dto.UpdateTransactionStatusRequest
+	if err := c.Bind(&qty); err != nil {
+		return utils.ErrBadReq
+	}
+
+	token := c.Request().Header.Get("Authorization")
+
 	trans_id, err := strconv.Atoi(transaction_id)
 	if err != nil {
 		return utils.ErrBadReq
@@ -109,6 +117,17 @@ func (h *TransactionHandler) UpdateTransactionStatus(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	err = utils.UpdateBalance(trans.User_ID, trans.Amount)
+	if err != nil {
+		return err
+	}
+	err = utils.EmailTransaction(trans)
+	if err != nil {
+		return err
+	}
+
+	err = utils.UpdateStock(trans, qty.Qty, token)
 
 	resp := helper.RespHelper("Transaction status updated successfully", trans)
 	return c.JSON(http.StatusOK, resp)
