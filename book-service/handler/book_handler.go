@@ -56,7 +56,7 @@ func (h *BookHandler) CreateBook(c echo.Context) error {
 
 func (h *BookHandler) GetAllBooks(c echo.Context) error {
 	category := c.QueryParam("category")
-	
+
 	books, err := h.bookService.GetAllBooks(category)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -205,5 +205,48 @@ func (h *BookHandler) DeleteBook(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Book deleted successfully",
+	})
+}
+
+func (h *BookHandler) DeductStock(c echo.Context) error {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid book ID",
+		})
+	}
+
+	amount, err := strconv.Atoi(c.Param("amount"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid amount",
+		})
+	}
+
+	book, err := h.bookService.DeductStock(uint(id), amount)
+	if err != nil {
+		if err.Error() == "book not found" {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": "Book not found",
+			})
+		}
+		if err.Error() == "insufficient stock" {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Insufficient stock",
+			})
+		}
+		if err.Error() == "deduction amount must be greater than 0" {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Deduction amount must be greater than 0",
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "Stock deducted successfully",
+		"data":    book,
 	})
 }
