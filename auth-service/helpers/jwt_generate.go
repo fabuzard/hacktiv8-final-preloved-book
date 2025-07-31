@@ -10,6 +10,7 @@ import (
 )
 
 func GenerateJWT(user models.User) (string, error) {
+
 	godotenv.Load()
 	var jwtSecret = os.Getenv("JWT_SECRET")
 	claims := jwt.MapClaims{

@@ -3,6 +3,7 @@ package main
 import (
 	"auth-service/config"
 	"auth-service/handler"
+	"auth-service/jobs"
 	"auth-service/models"
 	"auth-service/repository"
 	"auth-service/routes"
@@ -38,6 +39,7 @@ func main() {
 
 	routes.SetupRoutes(e, authHandler)
 
+	jobs.StartCleanupJob(authRepo)
 	fmt.Println("Connected to db")
 	e.Logger.Fatal(e.Start(":8080"))
 }

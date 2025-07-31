@@ -24,9 +24,10 @@ func NewTransactionRepository(db *gorm.DB) TransactionRepository {
 
 func (r *transactionRepository) CreateTransaction(user_id int, t model.Transaction) (model.Transaction, error) {
 	t.User_ID = user_id
-	t.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
-	t.Expiration_Date = time.Now().Add(4 * time.Hour).Format("2006-01-02 15:04:05")
+	t.CreatedAt = time.Now()
+	t.Expiration_Date = time.Now().Add(4 * time.Hour)
 	t.Status = "pending"
+
 	if err := r.db.Create(&t).Error; err != nil {
 		return model.Transaction{}, err
 	}

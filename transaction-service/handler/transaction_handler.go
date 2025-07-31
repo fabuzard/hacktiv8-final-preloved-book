@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"fmt"
+	"main/dto"
 	"main/helper"
 	"main/model"
 	"main/service"
 	"main/utils"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/veritrans/go-midtrans"
@@ -25,20 +28,54 @@ func (h *TransactionHandler) CreateTransaction(c echo.Context) error {
 	name := c.Get("name").(string)
 	email := c.Get("email").(string)
 
-	var t model.Transaction
-	if err := c.Bind(&t); err != nil {
+	var req dto.CreateTransactionRequest
+	if err := c.Bind(&req); err != nil {
 		return utils.ErrBadReq
 	}
+
+	// Get token for calling book-service
+	token := c.Request().Header.Get("Authorization")
+
+	// Fetch book data
+	book, err := utils.GetBookByID(uint(req.BookID), token)
+	if err != nil || book.ID == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "book not found")
+	}
+	fmt.Println("Book Response:", book)
+
+	// Validate stock
+	if req.Qty <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "quantity must be greater than 0")
+	}
+	if req.Qty > book.Stock {
+		return echo.NewHTTPError(http.StatusBadRequest, "quantity exceeds available stock")
+	}
+
+	// Compute amount
+	amount := float64(req.Qty) * book.Cost
+
+	// Build transaction model
+	t := model.Transaction{
+		Book_ID: req.BookID,
+		Amount:  amount,
+	}
+
+	// Store transaction
 	trans, err := h.serv.CreateTransaction(user_id, t)
-
-	strId := strconv.Itoa(int(t.Transaction_ID))
-
-	tokenUrl := utils.MidtransPayment(strId, int(trans.Amount), name, email)
-
 	if err != nil {
 		return err
 	}
 
+	// Generate midtrans payment link
+	orderId := fmt.Sprintf("%d-%d", trans.Transaction_ID, time.Now().Unix())
+	tokenUrl := utils.MidtransPayment(orderId, int(trans.Amount), name, email)
+
+	// Check if midtrans returned a valid token
+	if tokenUrl.Token == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, tokenUrl.ErrorMessages)
+	}
+
+	// Build response
 	res := struct {
 		TokenUrl       midtrans.SnapResponse `json:"token_url"`
 		Transaction_id int                   `json:"transaction_id"`
@@ -52,7 +89,7 @@ func (h *TransactionHandler) CreateTransaction(c echo.Context) error {
 }
 
 func (h *TransactionHandler) GetTransaction(c echo.Context) error {
-	user_id := c.Get("id").(int)
+	user_id := c.Get("user_id").(int)
 	transactions, err := h.serv.GetTransaction(user_id)
 	if err != nil {
 		return err
