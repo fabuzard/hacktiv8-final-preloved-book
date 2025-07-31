@@ -12,7 +12,8 @@ type AuthRepository interface {
 	GetUserByEmail(email string) (models.User, error)
 	CreateUser(user models.User) (models.User, error)
 	UpdateUser(user models.User) (models.User, error)
-	DeleteUser(id uint) error
+	DeleteInactiveUsersOver30Days() error
+
 	VerifyUser(email string) (models.User, error)
 }
 
@@ -22,6 +23,12 @@ type authRepository struct {
 
 func NewAuthRepository(db *gorm.DB) AuthRepository {
 	return &authRepository{db: db}
+}
+
+func (r *authRepository) DeleteInactiveUsersOver30Days() error {
+	return r.db.
+		Where("is_verified = ? AND created_at <= NOW() - INTERVAL '30 days'", false).
+		Delete(&models.User{}).Error
 }
 
 func (r *authRepository) GetUserByEmail(email string) (models.User, error) {
@@ -56,13 +63,6 @@ func (r *authRepository) UpdateUser(user models.User) (models.User, error) {
 		return models.User{}, err
 	}
 	return user, nil
-}
-
-func (r *authRepository) DeleteUser(id uint) error {
-	if err := r.db.Delete(&models.User{}, id).Error; err != nil {
-		return err
-	}
-	return nil
 }
 
 func (r *authRepository) VerifyUser(email string) (models.User, error) {

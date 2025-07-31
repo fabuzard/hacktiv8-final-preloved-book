@@ -13,7 +13,8 @@ type AuthService interface {
 	CreateUser(user dto.RegisterRequest) (models.User, error)
 	UpdateUser(user models.User) (models.User, error)
 	GetUserByEmail(email string) (models.User, error)
-	DeleteUser(id uint) error
+	DeleteInactiveUsersOver30Days() error
+
 	VerifyUser(email string) (models.User, error)
 }
 
@@ -23,6 +24,9 @@ type authService struct {
 
 func NewAuthService(repo repository.AuthRepository) AuthService {
 	return &authService{repo: repo}
+}
+func (s *authService) DeleteInactiveUsersOver30Days() error {
+	return s.repo.DeleteInactiveUsersOver30Days()
 }
 
 func (s *authService) GetUserByEmail(email string) (models.User, error) {
@@ -67,13 +71,6 @@ func (s *authService) UpdateUser(user models.User) (models.User, error) {
 		return models.User{}, err
 	}
 	return updatedUser, nil
-}
-
-func (s *authService) DeleteUser(id uint) error {
-	if err := s.repo.DeleteUser(id); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *authService) VerifyUser(email string) (models.User, error) {

@@ -40,12 +40,28 @@ func (m *MockAuthService) UpdateUser(user models.User) (models.User, error) {
 	return user, nil
 }
 func (m *MockAuthService) GetUserByEmail(email string) (models.User, error) {
-	panic("not implemented")
+	if email == "notfound@mail.com" {
+		return models.User{}, errors.New("user not found")
+	}
+	return models.User{
+		ID:       2,
+		Fullname: "Email User",
+		Email:    email,
+		Role:     "buyer",
+	}, nil
 }
+
 func (m *MockAuthService) DeleteUser(id uint) error {
+	if id == 999 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+func (m *MockAuthService) VerifyUser(email string) (models.User, error) {
 	panic("not implemented")
 }
-func (m *MockAuthService) VerifyUser(email string) (models.User, error) {
+func (m *MockAuthService) DeleteInactiveUsersOver30Days() error {
 	panic("not implemented")
 }
 
@@ -101,4 +117,41 @@ func TestUpdateUser(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Contains(t, rec.Body.String(), "Updated Name")
 	}
+}
+
+func TestGetUserByEmail_Success(t *testing.T) {
+	mock := &MockAuthService{}
+	email := "found@mail.com"
+
+	user, err := mock.GetUserByEmail(email)
+
+	assert.NoError(t, err)
+	assert.Equal(t, email, user.Email)
+	assert.Equal(t, "Email User", user.Fullname)
+}
+
+func TestGetUserByEmail_NotFound(t *testing.T) {
+	mock := &MockAuthService{}
+	email := "notfound@mail.com"
+
+	user, err := mock.GetUserByEmail(email)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "user not found")
+	assert.Equal(t, uint(0), user.ID)
+}
+
+func TestDeleteUser_Success(t *testing.T) {
+	mock := &MockAuthService{}
+	err := mock.DeleteUser(1)
+
+	assert.NoError(t, err)
+}
+
+func TestDeleteUser_NotFound(t *testing.T) {
+	mock := &MockAuthService{}
+	err := mock.DeleteUser(999)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "user not found")
 }
