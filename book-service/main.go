@@ -42,6 +42,7 @@ func main() {
 	books.GET("/:id", bookHandler.GetBookByID)
 	books.PUT("/:id", bookHandler.UpdateBook)
 	books.DELETE("/:id", bookHandler.DeleteBook)
+	books.PATCH("/:id/:amount", bookHandler.DeductStock)
 
 	port := os.Getenv("PORT")
 	if port == "" {

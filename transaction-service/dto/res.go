@@ -8,10 +8,11 @@ type GetBookByIDResponse struct {
 }
 
 type BookResponse struct {
-	ID    uint    `json:"id"`
-	Name  string  `json:"name"`
-	Stock int     `json:"stock"`
-	Cost  float64 `json:"costs"`
+	ID       uint    `json:"id"`
+	Name     string  `json:"name"`
+	Stock    int     `json:"stock"`
+	Cost     float64 `json:"costs"`
+	SellerID uint    `json:"seller_id"`
 }
 
 type GetUserByIDResponse struct {

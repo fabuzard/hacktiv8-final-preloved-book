@@ -5,6 +5,10 @@ type CreateTransactionRequest struct {
 	Qty    int `json:"qty" validate:"required"`
 }
 
+type WebhookRequest struct {
+	TransactionID uint `json:"transaction_id"`
+	Qty           int  `json:"qty"`
+}
 type UpdateTransactionStatusRequest struct {
 	Qty int `json:"qty" validate:"required"`
 }

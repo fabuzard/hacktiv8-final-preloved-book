@@ -2,6 +2,7 @@ package repository
 
 import (
 	"book-service/model"
+
 	"gorm.io/gorm"
 )
 
@@ -30,11 +31,11 @@ func (r *bookRepository) Create(book *model.Book) error {
 func (r *bookRepository) GetAll(category string) ([]model.Book, error) {
 	var books []model.Book
 	query := r.db.Model(&model.Book{})
-	
+
 	if category != "" {
 		query = query.Where("category ILIKE ?", "%"+category+"%")
 	}
-	
+
 	err := query.Find(&books).Error
 	return books, err
 }
