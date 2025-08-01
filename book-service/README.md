@@ -38,3 +38,24 @@ Book management microservice for the used book marketplace.
 ## Database Migration
 
 The service automatically migrates the Book model on startup using GORM AutoMigrate.
+
+## Run tests for the service package specifically:
+  ```
+  go test ./service -v
+  ```
+
+## Run all tests in the project:
+```
+  go test ./... -v
+  ```
+
+## Run tests with coverage:
+```
+  go test ./service -v -cover
+  ```
+
+## Run tests with detailed coverage report:
+```
+  go test ./service -v -coverprofile=coverage.out
+  go tool cover -html=coverage.out
+  ```
