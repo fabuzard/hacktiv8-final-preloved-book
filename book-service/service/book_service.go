@@ -175,4 +175,6 @@ func (s *bookService) DeductStock(id uint, amount int) (*model.BookResponse, err
 
 	response := updatedBook.ToResponse()
 	return &response, nil
+
 }
+
