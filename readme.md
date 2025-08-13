@@ -4,6 +4,20 @@ A backend system for a secondhand book marketplace built with **Golang** using t
 
 > 🎯 Aligned with SDG Goal: **Category 4 – Quality Education**
 
+## 📝 Changelog
+
+### v1.1 – Redis Caching for Books (Aug 2025)
+- ✅ Implemented Redis caching for `Get book by id` and `Create book`
+- ✅ Cache new and updated books automatically  
+- ✅ Improved read performance for high-traffic endpoints  
+- ✅ Fallback to PostgreSQL if cache miss occurs  
+
+### v1.0 – Initial Release (July 2025)
+- 🚀 Microservices architecture with Go + Echo  
+- 📚 Book CRUD endpoints  
+- 👤 User management with JWT authentication  
+- 💳 Transaction management with Midtrans integration  
+- 📧 Email notifications for transactions
 ---
 
 ## 👥 Team Members
@@ -20,6 +34,7 @@ A backend system for a secondhand book marketplace built with **Golang** using t
 - **Framework**: Echo
 - **Architecture**: Microservices
 - **Database**: PostgreSQL
+- **Cache**: Redis (for book retrieval optimization)
 - **Structure**: Based on SOLID Principles
 
 ### 🔗 3rd-Party Integrations
