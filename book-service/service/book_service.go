@@ -1,9 +1,13 @@
 package service
 
 import (
+	r "book-service/config"
 	"book-service/model"
 	"book-service/repository"
+	"context"
 	"errors"
+	"fmt"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -44,6 +48,27 @@ func (s *bookService) CreateBook(req *model.CreateBookRequest, sellerID uint) (*
 		return nil, err
 	}
 
+	// save to redis
+	// Save to Redis (HSET)
+	err = r.Client.HSet(
+		context.Background(),
+		fmt.Sprintf("book:%d", book.ID),
+		map[string]interface{}{
+			"id":          book.ID,
+			"name":        book.Name,
+			"description": book.Description,
+			"author":      book.Author,
+			"stock":       book.Stock,
+			"costs":       book.Costs,
+			"category":    book.Category,
+			"seller_id":   book.SellerID,
+		},
+	).Err()
+
+	if err != nil {
+		fmt.Println("⚠ Failed to cache book:", err)
+	}
+
 	response := book.ToResponse()
 	return &response, nil
 }
@@ -63,16 +88,58 @@ func (s *bookService) GetAllBooks(category string) ([]model.BookResponse, error)
 }
 
 func (s *bookService) GetBookByID(id uint) (*model.BookResponse, error) {
-	book, err := s.bookRepo.GetByID(id)
+	ctx := context.Background()
+	key := fmt.Sprintf("book:%d", id)
+
+	// Try to get from Redis first
+	data, err := r.Client.HGetAll(ctx, key).Result()
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("book not found")
-		}
 		return nil, err
 	}
 
-	response := book.ToResponse()
-	return &response, nil
+	// If Redis returned empty, fallback to DB
+	if len(data) == 0 {
+		book, err := s.bookRepo.GetByID(id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, errors.New("book not found")
+			}
+			return nil, err
+		}
+		// Save to Redis for next time
+		r.Client.HSet(ctx, key, map[string]interface{}{
+			"id":          book.ID,
+			"seller_id":   book.SellerID,
+			"name":        book.Name,
+			"description": book.Description,
+			"author":      book.Author,
+			"stock":       book.Stock,
+			"costs":       book.Costs,
+			"category":    book.Category,
+		})
+
+		response := book.ToResponse()
+		return &response, nil
+	}
+
+	// Map Redis hash back to BookResponse
+	stock, _ := strconv.Atoi(data["stock"])
+	costs, _ := strconv.Atoi(data["costs"])
+	sellerID, _ := strconv.Atoi(data["seller_id"])
+	bookID, _ := strconv.Atoi(data["id"])
+
+	response := &model.BookResponse{
+		ID:          uint(bookID),
+		SellerID:    uint(sellerID),
+		Name:        data["name"],
+		Description: data["description"],
+		Author:      data["author"],
+		Stock:       stock,
+		Costs:       float64(costs),
+		Category:    data["category"],
+	}
+
+	return response, nil
 }
 
 func (s *bookService) GetBooksBySellerID(sellerID uint) ([]model.BookResponse, error) {
@@ -177,4 +244,3 @@ func (s *bookService) DeductStock(id uint, amount int) (*model.BookResponse, err
 	return &response, nil
 
 }
-

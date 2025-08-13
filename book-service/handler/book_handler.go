@@ -3,6 +3,7 @@ package handler
 import (
 	"book-service/model"
 	"book-service/service"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -35,6 +36,9 @@ func (h *BookHandler) CreateBook(c echo.Context) error {
 
 	// Extract role from JWT claims
 	role, ok := c.Get("role").(string)
+
+	fmt.Printf("DEBUG: role=%v, type=%T\n", c.Get("role"), c.Get("role"))
+
 	if !ok || role != "seller" {
 		return c.JSON(http.StatusForbidden, map[string]string{
 			"error": "Only sellers can create books",

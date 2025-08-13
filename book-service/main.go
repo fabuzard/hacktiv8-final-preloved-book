@@ -21,6 +21,7 @@ func main() {
 	}
 
 	e := echo.New()
+	config.InitRedis()
 
 	e.Validator = config.NewValidator()
 

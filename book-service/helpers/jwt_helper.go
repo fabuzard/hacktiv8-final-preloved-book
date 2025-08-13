@@ -31,22 +31,26 @@ func ParseToken(tokenStr string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func ExtractToken(c echo.Context) (uint, error) {
+func ExtractToken(c echo.Context) (uint, string, error) {
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" {
-		return 0, errors.New("missing Authorization header")
+		return 0, "", errors.New("missing Authorization header")
 	}
 
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 	claims, err := ParseToken(tokenStr)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
-		return 0, errors.New("invalid user_id in token")
+		return 0, "", errors.New("invalid user_id in token")
+	}
+	role, ok := claims["role"].(string)
+	if !ok {
+		return 0, "", errors.New("invalid role in token")
 	}
 
-	return uint(userIDFloat), nil
+	return uint(userIDFloat), role, nil
 }
